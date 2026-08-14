@@ -32,7 +32,7 @@ jobs:
 
       - name: Compile C++ to WebAssembly
         run: |
-          emcc game.cpp -o game.js \
+          em++ game.cpp -o game.js \
             -s WASM=1 \
             -s EXPORTED_FUNCTIONS='["_reset_game", "_make_move", "_get_game_state_json"]' \
             -s EXPORTED_RUNTIME_METHODS='["UTF8ToString", "cwrap", "ccall"]' \
