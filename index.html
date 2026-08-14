@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe (C++ & WebAssembly)</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-x: #38bdf8;
+            --accent-o: #f43f5e;
+            --accent-win: #10b981;
+            --border-color: #334155;
+            --hover-color: #283548;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+            color: #f1f5f9;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        #status {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .board-wrapper {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 25px auto;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+            width: 100%;
+            height: 100%;
+            background-color: var(--border-color);
+            border-radius: 12px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .cell {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .cell:hover {
+            background-color: var(--hover-color);
+            transform: scale(0.98);
+        }
+
+        .cell.x {
+            color: var(--accent-x);
+        }
+
+        .cell.o {
+            color: var(--accent-o);
+        }
+
+        /* Strike-through line */
+        #strike-line {
+            position: absolute;
+            background-color: var(--accent-win);
+            height: 6px;
+            border-radius: 3px;
+            transform-origin: left center;
+            transition: all 0.4s ease-in-out;
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+        }
+
+        button:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: #334155;
+            color: #cbd5e1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Tic Tac Toe</h1>
+        <div class="subtitle">Powered by C++ & WebAssembly</div>
+        
+        <div id="status">Loading C++ module...</div>
+
+        <div class="board-wrapper">
+            <div id="strike-line"></div>
+            <div class="board" id="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="restart-btn" onclick="restartGame()">Replay / Reset</button>
+        </div>
+
+        <div class="badge">C++ Game Logic Engine</div>
+    </div>
+
+    <!-- Fallback pure JS implementation if WASM fails or for immediate offline standalone running -->
+    <script>
+        let Module = {
+            onRuntimeInitialized: function() {
+                console.log("C++ WebAssembly module loaded successfully!");
+                isWasmLoaded = true;
+                updateUI();
+            }
+        };
+
+        let isWasmLoaded = false;
+
+        // JS Fallback engine in case wasm files aren't pre-compiled yet
+        let fallbackBoard = [0,0,0,0,0,0,0,0,0];
+        let fallbackCurrentPlayer = 1;
+        let fallbackGameState = 0;
+        let fallbackWinningCombo = [-1, -1, -1];
+        let fallbackWinType = -1;
+
+        const WIN_CONDITIONS = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function makeMove(index) {
+            if (isWasmLoaded && typeof _make_move === 'function') {
+                _make_move(index);
+                updateUI();
+            } else {
+                // Fallback JS Logic
+                if (fallbackBoard[index] !== 0 || fallbackGameState !== 0) return;
+                fallbackBoard[index] = fallbackCurrentPlayer;
+
+                // Check win
+                for (let i = 0; i < 8; i++) {
+                    const [a, b, c] = WIN_CONDITIONS[i];
+                    if (fallbackBoard[a] !== 0 && fallbackBoard[a] === fallbackBoard[b] && fallbackBoard[a] === fallbackBoard[c]) {
+                        fallbackGameState = fallbackBoard[a];
+                        fallbackWinningCombo = [a, b, c];
+                        fallbackWinType = i;
+                        updateUI();
+                        return;
+                    }
+                }
+
+                // Check draw
+                if (fallbackBoard.every(cell => cell !== 0) && fallbackGameState === 0) {
+                    fallbackGameState = 3;
+                    updateUI();
+                    return;
+                }
+
+                fallbackCurrentPlayer = fallbackCurrentPlayer === 1 ? 2 : 1;
+                updateUI();
+            }
+        }
+
+        function restartGame() {
+            if (isWasmLoaded && typeof _reset_game === 'function') {
+                _reset_game();
+                updateUI();
+            } else {
+                fallbackBoard = [0,0,0,0,0,0,0,0,0];
+                fallbackCurrentPlayer = 1;
+                fallbackGameState = 0;
+                fallbackWinningCombo = [-1, -1, -1];
+                fallbackWinType = -1;
+                updateUI();
+            }
+        }
+
+        function getState() {
+            if (isWasmLoaded && typeof _get_game_state_json === 'function') {
+                try {
+                    let ptr = _get_game_state_json();
+                    let jsonStr = UTF8ToString(ptr);
+                    return JSON.parse(jsonStr);
+                } catch(e) {
+                    console.error("Error reading WASM state:", e);
+                }
+            }
+            // Fallback state
+            return {
+                currentPlayer: fallbackCurrentPlayer,
+                gameState: fallbackGameState,
+                winType: fallbackWinType,
+                winningCombo: fallbackWinningCombo,
+                board: fallbackBoard
+            };
+        }
+
+        function updateUI() {
+            const state = getState();
+            const statusEl = document.getElementById('status');
+            const cells = document.querySelectorAll('.cell');
+            const strikeLine = document.getElementById('strike-line');
+
+            // Update cells
+            cells.forEach((cell, idx) => {
+                const val = state.board[idx];
+                cell.textContent = val === 1 ? 'X' : (val === 2 ? 'O' : '');
+                cell.className = 'cell' + (val === 1 ? ' x' : (val === 2 ? ' o' : ''));
+            });
+
+            // Update status text
+            if (state.gameState === 0) {
+                statusEl.innerHTML = `Current Player: <span style="color: ${state.currentPlayer === 1 ? 'var(--accent-x)' : 'var(--accent-o)'}; margin-left: 6px;">${state.currentPlayer === 1 ? 'X' : 'O'}</span>`;
+                strikeLine.style.display = 'none';
+            } else if (state.gameState === 1) {
+                statusEl.innerHTML = `<span style="color: var(--accent-x)">Player X Wins! 🎉</span>`;
+                drawStrikeLine(state.winType);
+            } else if (state.gameState === 2) {
+                statusEl.innerHTML = `<span style="color: var(--accent-o)">Player O Wins! 🎉</span>`;
+                drawStrikeLine(state.winType);
+            } else if (state.gameState === 3) {
+                statusEl.innerHTML = `<span style="color: #94a3b8">It's a Draw! 🤝</span>`;
+                strikeLine.style.display = 'none';
+            }
+        }
+
+        function drawStrikeLine(winType) {
+            const strikeLine = document.getElementById('strike-line');
+            strikeLine.style.display = 'block';
+
+            // Grid size: 300x300, padding: 8px, gap: 8px -> cell size = (300 - 16 - 16) / 3 = 89.33px
+            // Center of cells calculations
+            // Let's position precisely based on winType (0-2: rows, 3-5: cols, 6-7: diagonals)
+            const boardSize = 300;
+            const padding = 8;
+            const usableSize = boardSize - (padding * 2);
+            const cellSize = usableSize / 3; // ~94.66
+
+            let top = 0, left = 0, width = 0, angle = 0;
+
+            if (winType >= 0 && winType <= 2) {
+                // Row win (0, 1, 2)
+                let row = winType;
+                top = padding + (row * cellSize) + (cellSize / 2) - 3;
+                left = padding;
+                width = usableSize;
+                angle = 0;
+            } else if (winType >= 3 && winType <= 5) {
+                // Column win (3, 4, 5 -> col 0, 1, 2)
+                let col = winType - 3;
+                top = padding + (cellSize / 2) - 3; // rotated from origin
+                left = padding + (col * cellSize) + (cellSize / 2);
+                width = usableSize;
+                angle = 90;
+            } else if (winType === 6) {
+                // Diagonal top-left to bottom-right
+                top = padding;
+                left = padding;
+                width = Math.sqrt(usableSize * usableSize * 2);
+                angle = 45;
+            } else if (winType === 7) {
+                // Diagonal top-right to bottom-left
+                top = padding;
+                left = boardSize - padding;
+                width = Math.sqrt(usableSize * usableSize * 2);
+                angle = 135;
+            }
+
+            strikeLine.style.top = `${top}px`;
+            strikeLine.style.left = `${left}px`;
+            strikeLine.style.width = `${width}px`;
+            strikeLine.style.transform = `rotate(${angle}deg)`;
+        }
+
+        // Add click listeners to cells
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.addEventListener('click', () => {
+                const idx = parseInt(cell.getAttribute('data-index'));
+                makeMove(idx);
+            });
+        });
+
+        // Initial UI render
+        updateUI();
+    </script>
+
+    <!-- Load compiled WebAssembly if available -->
+    <script src="game.js" onerror="console.log('game.js not found yet, running with built-in JS engine fallback.')"></script>
+</body>
+</html>
