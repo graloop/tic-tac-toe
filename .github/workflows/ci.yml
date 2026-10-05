@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - uses: mymindstorm/setup-emsdk@v16
+        with:
+          version: 6.0.11
+
+      - name: Run engine and server tests
+        run: make test
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build Docker image
+        run: docker build -t tic-tac-toe .
+
+      - name: Smoke-test the container
+        run: |
+          docker run -d --name ttt --read-only --cap-drop ALL --security-opt no-new-privileges \
+            -e ACCESS_CODE=ci-smoke-test-code -p 127.0.0.1:8080:8080 tic-tac-toe
+          for i in $(seq 1 20); do curl -fs http://127.0.0.1:8080/healthz && break; sleep 1; done
+          # Game is locked without the code...
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/)" = 303
+          # ...and opens with it.
+          cookie=$(curl -s -D - -o /dev/null --data 'code=ci-smoke-test-code' http://127.0.0.1:8080/login \
+            | grep -i '^set-cookie' | sed 's/^[^:]*: //; s/;.*//')
+          curl -fs -b "$cookie" http://127.0.0.1:8080/ | grep -q 'Tic Tac Toe'
+          curl -fs -b "$cookie" -o /dev/null http://127.0.0.1:8080/engine.wasm
+          # Refuses to start without a proper code.
+          ! docker run --rm -e ACCESS_CODE=short tic-tac-toe
+
+      - name: Show container logs
+        if: always()
+        run: docker logs ttt || true

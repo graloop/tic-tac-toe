@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Tic Tac Toe</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="card">
+        <header class="top">
+            <h1>Tic Tac Toe</h1>
+            <form method="post" action="/logout">
+                <button type="submit" class="link">Sign out</button>
+            </form>
+        </header>
+
+        <section id="menu" class="view">
+            <p class="subtitle">How do you want to play?</p>
+            <button type="button" class="choice" data-mode="local">Two players on this device</button>
+            <div class="ai-row">
+                <button type="button" class="choice" data-mode="ai">Play the computer</button>
+                <select id="difficulty" aria-label="Computer difficulty">
+                    <option value="0">Easy</option>
+                    <option value="1">Medium</option>
+                    <option value="2" selected>Unbeatable</option>
+                </select>
+            </div>
+            <button type="button" class="choice" data-mode="online">Online with a friend</button>
+        </section>
+
+        <section id="lobby" class="view" hidden>
+            <button type="button" class="choice" id="create-room">Create a new game</button>
+            <p class="subtitle">or join a friend's game</p>
+            <form id="join-form" class="join">
+                <input id="join-code" maxlength="6" autocomplete="off" autocapitalize="characters"
+                       spellcheck="false" placeholder="Game code" aria-label="Game code">
+                <button type="submit">Join</button>
+            </form>
+            <p id="lobby-error" class="error" role="alert"></p>
+            <button type="button" class="link back">← Back</button>
+        </section>
+
+        <section id="game" class="view" hidden>
+            <div id="invite" class="invite" hidden>
+                Game code <strong id="room-code"></strong>
+                <button type="button" class="small" id="copy-link">Copy invite link</button>
+            </div>
+            <p id="status" class="status" role="status" aria-live="polite"></p>
+            <div class="board-wrapper">
+                <div class="board" id="board">
+                    <button type="button" class="cell" data-cell="0" aria-label="Row 1, column 1"></button>
+                    <button type="button" class="cell" data-cell="1" aria-label="Row 1, column 2"></button>
+                    <button type="button" class="cell" data-cell="2" aria-label="Row 1, column 3"></button>
+                    <button type="button" class="cell" data-cell="3" aria-label="Row 2, column 1"></button>
+                    <button type="button" class="cell" data-cell="4" aria-label="Row 2, column 2"></button>
+                    <button type="button" class="cell" data-cell="5" aria-label="Row 2, column 3"></button>
+                    <button type="button" class="cell" data-cell="6" aria-label="Row 3, column 1"></button>
+                    <button type="button" class="cell" data-cell="7" aria-label="Row 3, column 2"></button>
+                    <button type="button" class="cell" data-cell="8" aria-label="Row 3, column 3"></button>
+                </div>
+                <svg class="strike" viewBox="0 0 3 3" aria-hidden="true">
+                    <line id="strike-line" pathLength="1"></line>
+                </svg>
+            </div>
+            <div class="score">
+                <span class="x" id="score-label-1">X</span> <strong id="score-1">0</strong>
+                <span class="sep">·</span> Draws <strong id="score-3">0</strong>
+                <span class="sep">·</span> <span class="o" id="score-label-2">O</span> <strong id="score-2">0</strong>
+            </div>
+            <div class="controls">
+                <button type="button" id="again" hidden>Play again</button>
+                <button type="button" class="secondary back">Menu</button>
+            </div>
+        </section>
+
+        <p class="badge">Game rules run in C++ compiled to WebAssembly</p>
+    </main>
+
+    <script src="engine.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

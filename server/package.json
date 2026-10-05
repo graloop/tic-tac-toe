@@ -1,0 +1,13 @@
+{
+  "name": "tic-tac-toe-server",
+  "private": true,
+  "type": "module",
+  "description": "Access-code protected server for the C++/WebAssembly Tic-Tac-Toe game. No runtime dependencies.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node --test"
+  }
+}

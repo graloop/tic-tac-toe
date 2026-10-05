@@ -1,0 +1,26 @@
+services:
+  tic-tac-toe:
+    build: .
+    image: tic-tac-toe:latest
+    container_name: tic-tac-toe
+    restart: unless-stopped
+    environment:
+      ACCESS_CODE: ${ACCESS_CODE:?Set ACCESS_CODE in the .env file}
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      # Your nginx reverse proxy tells the app the real visitor IP and HTTPS status.
+      TRUST_PROXY: "true"
+    # Only reachable from the server itself; nginx forwards public traffic here.
+    ports:
+      - "127.0.0.1:${PORT:-8080}:8080"
+    # Hardening: the container can't write files, gain privileges, or use much CPU/RAM.
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"

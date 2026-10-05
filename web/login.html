@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Tic Tac Toe · Sign in</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="card narrow">
+        <h1>Tic Tac Toe</h1>
+        <p class="subtitle">Enter the access code to play.</p>
+        <form method="post" action="/login" id="login-form" class="join">
+            <input type="password" name="code" required autofocus autocomplete="current-password"
+                   placeholder="Access code" aria-label="Access code">
+            <button type="submit">Enter</button>
+        </form>
+        <p class="error" role="alert">{{MESSAGE}}</p>
+    </main>
+    <script src="login.js"></script>
+</body>
+</html>
